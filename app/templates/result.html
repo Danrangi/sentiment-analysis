@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Result — SentiAir</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo-mark">✈</div>
+      <div class="header-text">
+        <span class="site-name">SentiAir</span>
+        <span class="site-tagline">Airline Feedback Intelligence</span>
+      </div>
+      <div class="header-badge">ML Powered</div>
+    </header>
+
+    <!-- Result hero -->
+    <section class="hero hero-result">
+      <p class="hero-eyebrow">Analysis Complete</p>
+      <h1 class="hero-title">Sentiment Detected</h1>
+    </section>
+
+    <!-- Result card -->
+    <main class="card-main card-result"
+          style="--result-color: {{ result.color }};
+                 --result-bg: {{ result.bg }};
+                 --result-border: {{ result.border }};">
+
+      <!-- Sentiment badge -->
+      <div class="result-badge">
+        <span class="result-emoji">{{ result.emoji }}</span>
+        <span class="result-label" style="color: {{ result.color }};">
+          {{ result.label | upper }}
+        </span>
+        {% if result.confidence %}
+        <span class="result-confidence" style="background: {{ result.bg }}; color: {{ result.color }}; border-color: {{ result.border }};">
+          {{ result.confidence }}% confidence
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Divider -->
+      <div class="result-divider" style="background: {{ result.color }};"></div>
+
+      <!-- Original input -->
+      <div class="result-section">
+        <h3 class="result-section-title">Input Text</h3>
+        <blockquote class="result-quote" style="border-color: {{ result.border }};">
+          "{{ result.input_text }}"
+        </blockquote>
+      </div>
+
+      <!-- Interpretation -->
+      <div class="result-section">
+        <h3 class="result-section-title">Interpretation</h3>
+        <p class="result-body">{{ result.description }}</p>
+      </div>
+
+      <!-- Recommendation -->
+      <div class="result-section result-advice" style="background: {{ result.bg }}; border-color: {{ result.border }};">
+        <span class="advice-icon">💡</span>
+        <p class="result-body">{{ result.advice }}</p>
+      </div>
+
+      <!-- Technical detail (collapsed by default) -->
+      <details class="result-technical">
+        <summary>🔬 Technical Details</summary>
+        <div class="tech-grid">
+          <div class="tech-item">
+            <span class="tech-label">Model</span>
+            <span class="tech-value">LinearSVC</span>
+          </div>
+          <div class="tech-item">
+            <span class="tech-label">Features</span>
+            <span class="tech-value">TF-IDF Unigram</span>
+          </div>
+          <div class="tech-item">
+            <span class="tech-label">Preprocessing</span>
+            <span class="tech-value">Condition B (Minimal)</span>
+          </div>
+          <div class="tech-item">
+            <span class="tech-label">Cleaned Input</span>
+            <span class="tech-value tech-mono">{{ result.cleaned }}</span>
+          </div>
+        </div>
+      </details>
+
+      <!-- Actions -->
+      <div class="result-actions">
+        <a href="/" class="btn-analyse btn-back">
+          <span class="btn-arrow">←</span>
+          <span class="btn-text">Analyse Another</span>
+        </a>
+        <button class="btn-copy" onclick="copyResult()">
+          📋 Copy Result
+        </button>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Emmanuel Awo Onah · U22/FNS/CSC/1327 · Supervised by Mr. Adamu Abubakar</p>
+      <p>Department of Computer Science · IBBU Lapai · 2025</p>
+    </footer>
+
+  </div>
+
+  <script>
+    function copyResult() {
+      const text = `SentiAir Result\nSentiment: {{ result.label | upper }}\nInput: "{{ result.input_text }}"\n{{ result.description }}`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy Result', 2000);
+      });
+    }
+  </script>
+</body>
+</html>

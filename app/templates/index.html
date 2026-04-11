@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SentiAir — Airline Feedback Analyser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+  <!-- Background grid decoration -->
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo-mark">✈</div>
+      <div class="header-text">
+        <span class="site-name">SentiAir</span>
+        <span class="site-tagline">Airline Feedback Intelligence</span>
+      </div>
+      <div class="header-badge">ML Powered</div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <p class="hero-eyebrow">BSc Research Project · IBBU Lapai · 2025</p>
+      <h1 class="hero-title">
+        Understand what your<br/>
+        <em>passengers really feel</em>
+      </h1>
+      <p class="hero-sub">
+        Paste any airline-related tweet or customer feedback below.
+        Our SVM model — trained on 14,427 real airline tweets — will
+        classify it as <strong>positive</strong>, <strong>neutral</strong>, or <strong>negative</strong> in under a second.
+      </p>
+    </section>
+
+    <!-- Main card -->
+    <main class="card-main">
+      <form action="/analyse" method="POST" id="feedbackForm">
+
+        <div class="form-label-row">
+          <label for="feedback" class="form-label">Customer Feedback Text</label>
+          <span class="char-counter" id="charCounter">0 / 280</span>
+        </div>
+
+        <div class="textarea-wrap">
+          <textarea
+            id="feedback"
+            name="feedback"
+            class="feedback-input"
+            placeholder="e.g. The cabin crew was incredibly helpful and the flight arrived on time. Best experience in years!"
+            rows="5"
+            maxlength="560"
+            required
+          ></textarea>
+          <div class="textarea-icon">💬</div>
+        </div>
+
+        <!-- Example buttons -->
+        <div class="examples-row">
+          <span class="examples-label">Try an example:</span>
+          <button type="button" class="ex-btn ex-neg"
+            data-text="Flight cancelled with no warning. Waited 4 hours and nobody from the airline came to help. Absolutely disgraceful service.">
+            😠 Negative
+          </button>
+          <button type="button" class="ex-btn ex-neu"
+            data-text="My flight departs from Terminal 3 at 6am tomorrow. Just checking the gate number.">
+            😐 Neutral
+          </button>
+          <button type="button" class="ex-btn ex-pos"
+            data-text="Incredible crew, smooth flight, on time arrival. Delta never disappoints. 10 out of 10!">
+            😊 Positive
+          </button>
+        </div>
+
+        <button type="submit" class="btn-analyse" id="submitBtn">
+          <span class="btn-text">Analyse Sentiment</span>
+          <span class="btn-arrow">→</span>
+        </button>
+
+      </form>
+    </main>
+
+    <!-- Model info strip -->
+    <section class="info-strip">
+      <div class="info-item">
+        <span class="info-num">14,427</span>
+        <span class="info-desc">Training tweets</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-num">79.7%</span>
+        <span class="info-desc">Test accuracy</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-num">0.734</span>
+        <span class="info-desc">Macro F1 score</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-num">SVM</span>
+        <span class="info-desc">Best classifier</span>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Emmanuel Awo Onah · U22/FNS/CSC/1327 · Supervised by Mr. Adamu Abubakar</p>
+      <p>Department of Computer Science · IBBU Lapai · 2025</p>
+    </footer>
+
+  </div><!-- end page-wrapper -->
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
