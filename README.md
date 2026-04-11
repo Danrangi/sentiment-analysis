@@ -1,12 +1,5 @@
 # SentiAir — Airline Customer Feedback Sentiment Analyser
 
-BSc Computer Science Research Project  
-**Author:** Emmanuel Awo Onah (U22/FNS/CSC/1327)  
-**Supervisor:** Mr. Adamu Abubakar  
-**Institution:** Ibrahim Badamasi Babangida University, Lapai
-
----
-
 ## Overview
 A machine learning web application that classifies airline customer feedback
 (from Twitter) as **positive**, **neutral**, or **negative** using a Support
