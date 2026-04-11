@@ -31,11 +31,12 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
+          cd app
           pyinstaller sentiair.spec
 
       - name: Upload SentiAir.exe as release artifact
         uses: actions/upload-artifact@v4
         with:
           name: SentiAir-Windows
-          path: dist/SentiAir.exe
+          path: app/dist/SentiAir.exe
           retention-days: 30
