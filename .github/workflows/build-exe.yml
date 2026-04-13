@@ -1,91 +1,77 @@
-# -*- mode: python ; coding: utf-8 -*-
-import os
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+name: Build SentiAir.exe
 
-block_cipher = None
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
-# Collect all necessary hidden imports
-hidden_imports = [
-    'sklearn',
-    'sklearn.svm',
-    'sklearn.svm._classes',
-    'sklearn.feature_extraction.text',
-    'sklearn.naive_bayes',
-    'sklearn.ensemble',
-    'sklearn.preprocessing',
-    'sklearn.metrics',
-    'sklearn.utils',
-    'sklearn.utils._bunch',
-    'sklearn.utils.validation',
-    'sklearn.utils._param_validation',
-    'sklearn.pipeline',
-    'joblib',
-    'nltk',
-    'nltk.tokenize',
-    'nltk.corpus',
-    'nltk.stem',
-    'flask',
-    'flask.templating',
-    'jinja2',
-    'werkzeug',
-    'numpy',
-    'scipy',
-    'scipy.sparse',
-    'scipy.sparse._compressed',
-    'scipy.sparse._csr',
-    'threadpoolctl',
-]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# Data files to bundle
-datas = [
-    ('app/templates',  'app/templates'),
-    ('app/static',     'app/static'),
-    ('models',         'models'),
-    ('data',           'data'),
-]
+jobs:
+  build-windows:
+    runs-on: windows-latest
 
-# Bundle NLTK data
-import nltk
-nltk_data_path = os.path.join(os.path.expanduser('~'), 'nltk_data')
-if os.path.exists(nltk_data_path):
-    datas.append((nltk_data_path, 'nltk_data'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-a = Analysis(
-    ['app/launcher.py'],
-    pathex=['app'],
-    binaries=[],
-    datas=datas,
-    hiddenimports=hidden_imports,
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=['matplotlib', 'pandas', 'tkinter', 'PyQt5', 'wx'],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask scikit-learn nltk numpy joblib scipy threadpoolctl pyinstaller
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='SentiAir',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,          # ← no black terminal window
-    disable_windowed_traceback=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon=None,              # ← add 'app/static/icon.ico' if you have one
-)
+      - name: Download NLTK data
+        run: |
+          python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt'); nltk.download('punkt_tab')"
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --noconfirm --onefile --windowed `
+            --name "SentiAir" `
+            --add-data "app/templates;app/templates" `
+            --add-data "app/static;app/static" `
+            --add-data "models;models" `
+            --add-data "data;data" `
+            --hidden-import sklearn `
+            --hidden-import sklearn.svm `
+            --hidden-import sklearn.svm._classes `
+            --hidden-import sklearn.svm._base `
+            --hidden-import sklearn.feature_extraction.text `
+            --hidden-import sklearn.naive_bayes `
+            --hidden-import sklearn.ensemble `
+            --hidden-import sklearn.ensemble._forest `
+            --hidden-import sklearn.preprocessing `
+            --hidden-import sklearn.preprocessing._label `
+            --hidden-import sklearn.pipeline `
+            --hidden-import sklearn.metrics `
+            --hidden-import sklearn.utils `
+            --hidden-import sklearn.utils.validation `
+            --hidden-import sklearn.utils._bunch `
+            --hidden-import sklearn.utils._param_validation `
+            --hidden-import nltk `
+            --hidden-import nltk.tokenize `
+            --hidden-import nltk.corpus `
+            --hidden-import nltk.stem `
+            --hidden-import nltk.stem.porter `
+            --hidden-import joblib `
+            --hidden-import scipy `
+            --hidden-import scipy.sparse `
+            --hidden-import scipy.sparse._compressed `
+            --hidden-import scipy.sparse._csr `
+            --hidden-import threadpoolctl `
+            --collect-all sklearn `
+            --collect-all nltk `
+            launcher.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SentiAir-Windows
+          path: dist/SentiAir.exe
+          retention-days: 30
