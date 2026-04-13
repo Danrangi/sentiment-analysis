@@ -1,22 +1,97 @@
 import sys
 import os
+import re
 import time
 import threading
 import webbrowser
+import joblib
+import nltk
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app'))
+nltk.download('stopwords', quiet=True)
+nltk.download('punkt',     quiet=True)
+nltk.download('punkt_tab', quiet=True)
 
+from nltk.corpus import stopwords
 from flask import Flask, render_template, request, jsonify
-from predict import predict
 
-app = Flask(
-    __name__,
-    template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'templates'),
-    static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app', 'static')
-)
+# ── Resolve paths correctly inside frozen .exe ────────────────
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'app', 'templates')
+STATIC_DIR   = os.path.join(BASE_DIR, 'app', 'static')
+MODEL_PATH   = os.path.join(BASE_DIR, 'models', 'best_model.pkl')
+VEC_PATH     = os.path.join(BASE_DIR, 'models', 'tfidf_vectorizer.pkl')
+LE_PATH      = os.path.join(BASE_DIR, 'models', 'label_encoder.pkl')
+
+# ── Load model artefacts ──────────────────────────────────────
+model = joblib.load(MODEL_PATH)
+vec   = joblib.load(VEC_PATH)
+le    = joblib.load(LE_PATH)
+
+# ── Preprocessing (Condition B — minimal) ────────────────────
+def preprocess(text):
+    text = str(text).lower()
+    text = re.sub(r'http\S+|www\S+', '', text)
+    text = re.sub(r'@\w+',           '', text)
+    text = re.sub(r'#',              '', text)
+    text = re.sub(r'&amp;',         'and', text)
+    text = re.sub(r'[^a-z\s]',      '', text)
+    text = re.sub(r'\s+',           ' ', text).strip()
+    return text
+
+# ── Sentiment metadata ────────────────────────────────────────
+SENTIMENT_META = {
+    'negative': {
+        'emoji': '😠', 'color': '#E63946', 'bg': '#fff0f0', 'border': '#E63946',
+        'description': 'The feedback expresses dissatisfaction, frustration, or a complaint.',
+        'advice': 'Immediate attention recommended. Consider reaching out to the customer.'
+    },
+    'neutral': {
+        'emoji': '😐', 'color': '#457B9D', 'bg': '#f0f6fb', 'border': '#457B9D',
+        'description': 'The feedback is factual or informational with no strong sentiment.',
+        'advice': 'Monitor for follow-up. May indicate an unresolved question.'
+    },
+    'positive': {
+        'emoji': '😊', 'color': '#2DC653', 'bg': '#f0fbf3', 'border': '#2DC653',
+        'description': 'The feedback expresses satisfaction, praise, or appreciation.',
+        'advice': 'Great outcome! Consider using as a testimonial or staff recognition.'
+    }
+}
+
+def predict(text):
+    if not text or not text.strip():
+        return {'error': 'No text provided.'}
+    cleaned   = preprocess(text)
+    X         = vec.transform([cleaned])
+    y_encoded = model.predict(X)[0]
+    label     = le.inverse_transform([y_encoded])[0]
+    meta      = SENTIMENT_META[label]
+    try:
+        scores     = model.decision_function(X)[0]
+        confidence = round(float(max(scores) - min(scores)) / (max(scores) - min(scores) + 1e-9) * 100, 1)
+        confidence = min(max(confidence, 55.0), 99.0)
+    except Exception:
+        confidence = None
+    return {
+        'label':       label,
+        'emoji':       meta['emoji'],
+        'color':       meta['color'],
+        'bg':          meta['bg'],
+        'border':      meta['border'],
+        'description': meta['description'],
+        'advice':      meta['advice'],
+        'confidence':  confidence,
+        'input_text':  text,
+        'cleaned':     cleaned,
+    }
+
+# ── Flask app ─────────────────────────────────────────────────
+app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
 last_heartbeat = time.time()
-HEARTBEAT_TIMEOUT = 8
 
 @app.route('/')
 def index():
@@ -46,23 +121,21 @@ def heartbeat():
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
-    threading.Thread(target=_delayed_shutdown).start()
+    threading.Thread(target=lambda: (time.sleep(1), os._exit(0))).start()
     return jsonify({'status': 'shutting down'})
 
-def _delayed_shutdown():
-    time.sleep(1)
-    os._exit(0)
-
+# ── Heartbeat watcher ─────────────────────────────────────────
 def watch_heartbeat():
     global last_heartbeat
     time.sleep(15)
     while True:
         time.sleep(3)
-        if time.time() - last_heartbeat > HEARTBEAT_TIMEOUT:
+        if time.time() - last_heartbeat > 8:
             os._exit(0)
 
+# ── Open browser ──────────────────────────────────────────────
 def open_browser():
-    time.sleep(1.8)
+    time.sleep(2)
     webbrowser.open('http://localhost:5000')
 
 if __name__ == '__main__':
